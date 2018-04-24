@@ -100,7 +100,10 @@ def main(argv):
     if not CHECK_LIST or 'nodeos' in CHECK_LIST:
         process_found = False
         for pid in psutil.pids():
-            p = psutil.Process(pid)
+            try:
+                p = psutil.Process(pid)
+            except:
+                cotinue
             if p.name() == "nodeos":
                 process_found = True
         if not process_found:
