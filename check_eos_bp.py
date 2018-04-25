@@ -120,6 +120,11 @@ def main(argv):
 
         heads = get_heads(peers)
         node_head = get_info('{}:{}'.format(HOST, HTTP_PORT))['head_block_num']
+
+        if len(peers) == 0:
+            print('HEAD ERROR: Unable to get node head')
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+
         head_diff = abs(node_head- max(heads))
 
         if head_diff > NUM_BLOCKS_THRESHOLD:
