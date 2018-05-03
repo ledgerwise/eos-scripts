@@ -90,6 +90,7 @@ def main(argv):
 
     if not CHECK_LIST or 'p2p' in CHECK_LIST:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
         result = sock.connect_ex((HOST, P2P_PORT))
         if result != 0:
             print('P2P CRITICAL: P2P service DOWN')
