@@ -59,6 +59,7 @@ def main(argv):
                        help='IP or hostname to check. default = localhost')
     parser.add_argument('-p', '--http_port', type=int, default=8888,
                        help='HTTP port number. default = 8888')
+    parser.add_argument('-s', '--ssl', action='store_true', help = 'Use ssl to connect to the api endpoint')
     parser.add_argument('-p2', '--p2p_port', type=int, default=9876,
                        help='P2P port number. default = 9876')
     parser.add_argument('-cf', '--config-file', default='peers.ini',
@@ -74,10 +75,11 @@ def main(argv):
     NUM_BLOCKS_THRESHOLD = args.num_blocks_threshold
     CHECK_LIST = args.check_list.split(',') if args.check_list else None
     VERBOSE = args.verbose
+    SSL = args.ssl
 
     if not CHECK_LIST or 'http' in CHECK_LIST:
         try:
-            response = urllib.request.urlopen('http://{}:{}/v1/chain/get_info'.format(HOST, HTTP_PORT))
+            response = urllib.request.urlopen('{}://{}:{}/v1/chain/get_info'.format('http' if not SSL else 'https', HOST, HTTP_PORT))
             j_response = response.read()
             if VERBOSE:
                 print('HTTP response is OK')
