@@ -9,6 +9,10 @@ import psutil
 import re
 import requests
 import threading
+import datetime
+import mpu.io
+from dateutil.tz import tzutc
+from dateutil.parser import *
 
 SERVICE_STATUS = {
     'OK': 0,
@@ -16,6 +20,15 @@ SERVICE_STATUS = {
     'CRITICAL': 2,
     'UNKNOWN': 3
 }
+
+def get_lbp(lbp_file):
+    try:
+        result = mpu.io.read(lbp_file)
+    except Exception as e:
+        print('ERROR: {}'.format(str(e)))
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+
+    return result
 
 def get_peers(config_file):
     try:
@@ -66,7 +79,11 @@ def main(argv):
                        help='Config file to get the RPC endpoints (One host:port per line)')
     parser.add_argument('-n', '--num-blocks-threshold', default=120,
                        help='Threshold to consider that head is forked or not working')
-    parser.add_argument('-c', '--check_list', help='Comma separated list of checks to perform. Choices: [http,p2p,nodeos,head]. If not set it performs all the checks sequentially')
+    parser.add_argument('-c', '--check_list', help='Comma separated list of checks to perform. Choices: [http,p2p,nodeos,head,lbp]. If not set it performs all the checks sequentially')
+    parser.add_argument('-lbp', '--lbp_file', default='eos.lbp.json',
+                        help='json file with the lbp info. Produced by eoslpb.py')
+    parser.add_argument('-bpa', '--bp_account',
+                        help='BP accounts to check last block produced')
     args = parser.parse_args()
     HOST = args.host
     HTTP_PORT = args.http_port
@@ -75,6 +92,8 @@ def main(argv):
     NUM_BLOCKS_THRESHOLD = args.num_blocks_threshold
     CHECK_LIST = args.check_list.split(',') if args.check_list else None
     VERBOSE = args.verbose
+    LBP_FILE = args.lbp_file
+    BPA = args.bp_account
     SSL = args.ssl
 
     if not CHECK_LIST or 'http' in CHECK_LIST:
@@ -106,7 +125,7 @@ def main(argv):
             try:
                 p = psutil.Process(pid)
             except:
-                cotinue
+                continue
             if p.name() == "nodeos":
                 process_found = True
         if not process_found:
@@ -135,6 +154,24 @@ def main(argv):
             sys.exit(SERVICE_STATUS['CRITICAL'])
         if VERBOSE:
                 print('head block OK: {} blocks of difference'.format(head_diff))
+
+    if 'lbp' in CHECK_LIST:
+        lbp = get_lbp(LBP_FILE)
+        if not BPA:
+            print('LBP CRITICAL: No BP account specified')
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+
+        if not BPA in lbp:
+            print('LBP CRITICAL: {} never produced'.format(BPA))
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+
+        last_block_produced_time = lbp[BPA]['last_block_produced_time']
+        last_block_produced_time_dt = datetime.datetime.strptime(last_block_produced_time, "%Y-%m-%dT%H:%M:%S.%f")
+        now = datetime.datetime.utcnow()
+        secs_diff = int((now - last_block_produced_time_dt).total_seconds())
+        if secs_diff > 126:
+            print('LBP CRITICAL: {} last produced {} seconds ago'.format(BPA, secs_diff))
+            sys.exit(SERVICE_STATUS['CRITICAL'])
 
     print('BP Services OK')
     sys.exit(SERVICE_STATUS['OK'])
