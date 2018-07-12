@@ -11,8 +11,6 @@ import requests
 import threading
 import datetime
 import mpu.io
-from dateutil.tz import tzutc
-from dateutil.parser import *
 
 SERVICE_STATUS = {
     'OK': 0,
