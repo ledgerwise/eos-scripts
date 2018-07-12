@@ -157,22 +157,22 @@ def main(argv):
 
     if 'lbp' in CHECK_LIST:
         lbp = get_lbp(LBP_FILE)
-        if not BPA:
-            print('LBP CRITICAL: No BP account specified')
-            sys.exit(SERVICE_STATUS['CRITICAL'])
 
-        if not BPA in lbp:
-            print('LBP CRITICAL: {} never produced'.format(BPA))
-            sys.exit(SERVICE_STATUS['CRITICAL'])
+        if not BPA in lbp['producers']:
+            ok_output += '{} is not in top 21'.format(BPA)
+        else:
+            if not BPA:
+                print('LBP CRITICAL: No BP account specified')
+                sys.exit(SERVICE_STATUS['CRITICAL'])
 
-        last_block_produced_time = lbp[BPA]['last_block_produced_time']
-        last_block_produced_time_dt = datetime.datetime.strptime(last_block_produced_time, "%Y-%m-%dT%H:%M:%S.%f")
-        now = datetime.datetime.utcnow()
-        secs_diff = int((now - last_block_produced_time_dt).total_seconds())
-        if secs_diff > 126:
-            print('LBP CRITICAL: {} last produced {} seconds ago. '.format(BPA, secs_diff))
-            sys.exit(SERVICE_STATUS['CRITICAL'])
-        ok_output += '{} produced {} secs ago'.format(BPA, secs_diff)
+            last_block_produced_time = lbp[BPA]['last_block_produced_time']
+            last_block_produced_time_dt = datetime.datetime.strptime(last_block_produced_time, "%Y-%m-%dT%H:%M:%S.%f")
+            now = datetime.datetime.utcnow()
+            secs_diff = int((now - last_block_produced_time_dt).total_seconds())
+            if secs_diff > 126:
+                print('LBP CRITICAL: {} last produced {} seconds ago. '.format(BPA, secs_diff))
+                sys.exit(SERVICE_STATUS['CRITICAL'])
+            ok_output += '{} produced {} secs ago'.format(BPA, secs_diff)
 
     print('BP Services OK - {}'.format(ok_output))
     sys.exit(SERVICE_STATUS['OK'])
