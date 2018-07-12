@@ -94,6 +94,8 @@ def main(argv):
     BPA = args.bp_account
     SSL = args.ssl
 
+    ok_output = ''
+
     if not CHECK_LIST or 'http' in CHECK_LIST:
         try:
             response = urllib.request.urlopen('{}://{}:{}/v1/chain/get_info'.format('http' if not SSL else 'https', HOST, HTTP_PORT))
@@ -168,10 +170,11 @@ def main(argv):
         now = datetime.datetime.utcnow()
         secs_diff = int((now - last_block_produced_time_dt).total_seconds())
         if secs_diff > 126:
-            print('LBP CRITICAL: {} last produced {} seconds ago'.format(BPA, secs_diff))
+            print('LBP CRITICAL: {} last produced {} seconds ago. '.format(BPA, secs_diff))
             sys.exit(SERVICE_STATUS['CRITICAL'])
+        ok_output += '{} produced {} secs ago'.format(BPA, secs_diff)
 
-    print('BP Services OK')
+    print('BP Services OK - {}'.format(ok_output))
     sys.exit(SERVICE_STATUS['OK'])
 
 if __name__ == "__main__":
