@@ -102,3 +102,5 @@ ENV/
 
 #other
 peers.ini
+eos-scripts.code-workspace
+*.lbp.json

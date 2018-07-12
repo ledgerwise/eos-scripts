@@ -39,3 +39,25 @@ optional arguments:
                         [http,p2p,nodeos,head]. If not set it performs all the
                         checks sequentially
 ```
+
+
+## eoslpb.py
+Checks API nodes every second to get the last produced block time and the producer and stores that information in a json file. 
+
+### Dependencies
+* Python
+
+### Usage
+
+```bash
+./eoslpb.py --help
+Usage: eoslpb.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -e ENDPOINTS, --endpoint-list=ENDPOINTS
+                        Coma separated list of API nodes. Defaults to
+                        https://nodes.get-scatter.com
+  -n NETWORK, --network=NETWORK
+                        Network name. Defaults to eos
+```
