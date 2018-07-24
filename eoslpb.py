@@ -58,7 +58,8 @@ def main():
             sproducers = sorted(producers, key=lambda x: float(x['total_votes']), reverse=True)[:21]
             eoslbp['producers'] = [ sproducer['owner'] for sproducer in sproducers ]
             mpu.io.write(json_file, eoslbp)
-            time.sleep(1)
+            break
+        time.sleep(1)
 
 if __name__ == "__main__":
     main()
