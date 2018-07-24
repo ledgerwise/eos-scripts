@@ -39,7 +39,30 @@ def get_info(host_port, results = None, i = None):
         results[i] = result
 
     return result
-    
+
+def check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE):
+    try:
+        response = requests.get('{}://{}:{}/v1/chain/get_info'.format('http' if not SSL else 'https', HOST, PORT), timeout=TIMEOUT)
+        if response.status_code != 200:
+            print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(response.status_code))
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+        j_response = response.json()
+    except requests.exceptions.HTTPError as e:
+        print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(e.response.status_code))
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+    except requests.exceptions.Timeout:
+        print('HTTP CRITICAL: Failed to reach server. Reason: Timeout')
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+    except requests.exceptions.RequestException as e:
+        print('HTTP CRITICAL: Failed to reach server. Reason: {}'.format(e))
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+    except Exception as e:
+        print('HTTP CRITICAL: Failed to reach server. Reason: Unknown')
+        if VERBOSE:
+            print(e)
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+    performance_data = response.elapsed.total_seconds()
+    return j_response, performance_data
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Check BP status')
@@ -50,6 +73,7 @@ def main(argv):
                        help='Port number. default = 8888')
     parser.add_argument('-s', '--ssl', action='store_true', default=False, help = 'Use ssl to connect to the api endpoint')
     parser.add_argument('-t', '--timeout', type=int, default=3, help = 'Timeout in seconds')
+    parser.add_argument('-i', '--head_interval', type=int, default=10, help = 'Time in seconds to check head')
     parser.add_argument('-c', '--check', help='Check to perform [http,p2p,nodeos,lbp]')
     parser.add_argument('-lbp', '--lbp_file', default='eos.lbp.json',
                         help='json file with the lbp info. Produced by eoslpb.py')
@@ -59,6 +83,7 @@ def main(argv):
     args = parser.parse_args()
     HOST = args.host
     TIMEOUT = args.timeout
+    HEAD_INTERVAL = args.head_interval
     PORT = args.port
     CHECK = args.check
     VERBOSE = args.verbose
@@ -68,31 +93,34 @@ def main(argv):
 
     performance_data = ''
     
-    if CHECK == 'http':
-        try:
-            response = requests.get('{}://{}:{}/v1/chain/get_info'.format('http' if not SSL else 'https', HOST, PORT), timeout=TIMEOUT)
-            if response.status_code != 200:
-                print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(response.status_code))
-                sys.exit(SERVICE_STATUS['CRITICAL'])
-            j_response = response.json()
-        except requests.exceptions.HTTPError as e:
-            print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(e.response.status_code))
-            sys.exit(SERVICE_STATUS['CRITICAL'])
-        except requests.exceptions.Timeout:
-            print('HTTP CRITICAL: Failed to reach server. Reason: Timeout')
-            sys.exit(SERVICE_STATUS['CRITICAL'])
-        except requests.exceptions.RequestException as e:
-            print('HTTP CRITICAL: Failed to reach server. Reason: {}'.format(e))
-            sys.exit(SERVICE_STATUS['CRITICAL'])
-        except Exception as e:
-            print('HTTP CRITICAL: Failed to reach server. Reason: Unknown')
-            if VERBOSE:
-                print(e)
-            sys.exit(SERVICE_STATUS['CRITICAL'])
-        performance_data = response.elapsed.total_seconds()
-
+    if CHECK == 'http':   
+        j_response, performance_data = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
         print('BP API OK | time={}s'.format(performance_data))
         sys.exit(SERVICE_STATUS['OK'])
+    
+    if CHECK == 'head':
+        j_response, performance_data = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
+        head_block_num = int(j_response['head_block_num'])
+        last_irreversible_block_num = int(j_response['last_irreversible_block_num'])
+        
+        time.sleep(HEAD_INTERVAL)
+
+        j_response2, performance_data2 = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
+        head_block_num2 = int(j_response2['head_block_num'])
+        last_irreversible_block_num2 = int(j_response2['last_irreversible_block_num'])
+
+        is_hb_advancing = head_block_num2 > head_block_num
+        is_lib_advancing = last_irreversible_block_num2 > last_irreversible_block_num
+        
+        if is_hb_advancing and is_lib_advancing:
+            print('BP HEAD OK - LB: {}, LIB {} | time={}s'.format(head_block_num2, last_irreversible_block_num2, performance_data))
+            sys.exit(SERVICE_STATUS['OK'])
+        elif not is_hb_advancing:
+            print('BP HEAD BLOCK not advancing')
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+        elif not is_lib_advancing:
+            print('BP LIB not advancing')
+            sys.exit(SERVICE_STATUS['CRITICAL'])
 
     elif CHECK == 'p2p':
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
