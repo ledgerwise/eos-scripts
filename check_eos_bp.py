@@ -68,58 +68,70 @@ def main(argv):
     parser.add_argument('-v', '--verbose', action='store_true', help = 'Print verbose logging to stdout')
     parser.add_argument('-H', '--host', default='localhost',
                        help='IP or hostname to check. default = localhost')
-    parser.add_argument('-p', '--http_port', type=int, default=8888,
-                       help='HTTP port number. default = 8888')
-    parser.add_argument('-s', '--ssl', action='store_true', help = 'Use ssl to connect to the api endpoint')
-    parser.add_argument('-p2', '--p2p_port', type=int, default=9876,
-                       help='P2P port number. default = 9876')
+    parser.add_argument('-p', '--port', type=int, default=8888,
+                       help='Port number. default = 8888')
+    parser.add_argument('-s', '--ssl', action='store_true', default=False, help = 'Use ssl to connect to the api endpoint')
+    parser.add_argument('-t', '--timeout', type=int, default=3, help = 'Timeout in seconds')
     parser.add_argument('-cf', '--config-file', default='peers.ini',
                        help='Config file to get the RPC endpoints (One host:port per line)')
     parser.add_argument('-n', '--num-blocks-threshold', default=120,
                        help='Threshold to consider that head is forked or not working')
-    parser.add_argument('-c', '--check_list', help='Comma separated list of checks to perform. Choices: [http,p2p,nodeos,head,lbp]. If not set it performs all the checks sequentially')
+    parser.add_argument('-c', '--check', help='Check to perform [http,p2p,nodeos,lbp]')
     parser.add_argument('-lbp', '--lbp_file', default='eos.lbp.json',
                         help='json file with the lbp info. Produced by eoslpb.py')
     parser.add_argument('-bpa', '--bp_account',
                         help='BP accounts to check last block produced')
+    
     args = parser.parse_args()
     HOST = args.host
-    HTTP_PORT = args.http_port
-    P2P_PORT = args.p2p_port
+    TIMEOUT = args.timeout
+    PORT = args.port
     CONFIG_FILE = args.config_file
     NUM_BLOCKS_THRESHOLD = args.num_blocks_threshold
-    CHECK_LIST = args.check_list.split(',') if args.check_list else None
+    CHECK = args.check
     VERBOSE = args.verbose
     LBP_FILE = args.lbp_file
     BPA = args.bp_account
     SSL = args.ssl
 
-    ok_output = ''
-
-    if not CHECK_LIST or 'http' in CHECK_LIST:
+    performance_data = ''
+    
+    if CHECK == 'http':
         try:
-            response = urllib.request.urlopen('{}://{}:{}/v1/chain/get_info'.format('http' if not SSL else 'https', HOST, HTTP_PORT))
-            j_response = response.read()
+            response = requests.get('{}://{}:{}/v1/chain/get_info'.format('http' if not SSL else 'https', HOST, PORT), timeout=TIMEOUT)
+            if response.status_code != 200:
+                print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(response.status_code))
+                sys.exit(SERVICE_STATUS['CRITICAL'])
+            j_response = response.json()
+        except requests.exceptions.HTTPError as e:
+            print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(e.response.status_code))
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+        except requests.exceptions.Timeout:
+            print('HTTP CRITICAL: Failed to reach server. Reason: Timeout')
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+        except requests.exceptions.RequestException as e:
+            print('HTTP CRITICAL: Failed to reach server. Reason: {}'.format(e))
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+        except Exception as e:
+            print('HTTP CRITICAL: Failed to reach server. Reason: Unknown')
             if VERBOSE:
-                print('HTTP response is OK')
-        except HTTPError as e:
-            print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(e.code))
-            sys.exit(SERVICE_STATUS['CRITICAL'])
-        except URLError as e:
-            print('HTTP CRITICAL: Failed to reach server. Reason: {}'.format(e.reason))
+                print(e)
             sys.exit(SERVICE_STATUS['CRITICAL'])
 
-    if not CHECK_LIST or 'p2p' in CHECK_LIST:
+        print('BP API OK {}'.format(performance_data))
+        sys.exit(SERVICE_STATUS['OK'])
+
+    elif CHECK == 'p2p':
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)
-        result = sock.connect_ex((HOST, P2P_PORT))
+        sock.settimeout(TIMEOUT)
+        result = sock.connect_ex((HOST, PORT))
         if result != 0:
-            print('P2P CRITICAL: P2P service DOWN')
+            print('P2P CRITICAL')
             sys.exit(SERVICE_STATUS['CRITICAL'])
-        if VERBOSE:
-                print('P2P response is OK')
+        print('BP P2P OK {}'.format(performance_data))
+        sys.exit(SERVICE_STATUS['OK'])
 
-    if not CHECK_LIST or 'nodeos' in CHECK_LIST:
+    elif CHECK == 'nodeos':
         process_found = False
         for pid in psutil.pids():
             try:
@@ -131,35 +143,16 @@ def main(argv):
         if not process_found:
             print('nodeos CRITICAL: Process not running')
             sys.exit(SERVICE_STATUS['CRITICAL'])
-        elif VERBOSE:
-                print('nodeos process is running')
 
-    if not CHECK_LIST or 'head' in CHECK_LIST:
-        peers = get_peers(CONFIG_FILE)
-        if len(peers) == 0:
-            print('HEAD ERROR: No peers found')
-            sys.exit(SERVICE_STATUS['CRITICAL'])
+        print('BP nodeos running OK {}'.format(performance_data))
+        sys.exit(SERVICE_STATUS['OK'])
 
-        heads = get_heads(peers)
-        node_head = get_info('{}:{}'.format(HOST, HTTP_PORT))['head_block_num']
-
-        if len(peers) == 0:
-            print('HEAD ERROR: Unable to get node head')
-            sys.exit(SERVICE_STATUS['CRITICAL'])
-
-        head_diff = abs(node_head- max(heads))
-
-        if head_diff > NUM_BLOCKS_THRESHOLD:
-            print('head block CRITICAL: {} blocks difference. There might be a fork'.format(head_diff))
-            sys.exit(SERVICE_STATUS['CRITICAL'])
-        if VERBOSE:
-                print('head block OK: {} blocks of difference'.format(head_diff))
-
-    if 'lbp' in CHECK_LIST:
+    elif CHECK == 'lbp':
         lbp = get_lbp(LBP_FILE)
 
         if not BPA in lbp['producers']:
-            ok_output += '{} is not in top 21'.format(BPA)
+            print('{} is not in top 21'.format(BPA))
+            sys.exit(SERVICE_STATUS['OK'])
         else:
             if not BPA:
                 print('LBP CRITICAL: No BP account specified')
@@ -172,10 +165,8 @@ def main(argv):
             if secs_diff > 126:
                 print('LBP CRITICAL: {} last produced {} seconds ago. '.format(BPA, secs_diff))
                 sys.exit(SERVICE_STATUS['CRITICAL'])
-            ok_output += '{} produced {} secs ago'.format(BPA, secs_diff)
-
-    print('BP Services OK - {}'.format(ok_output))
-    sys.exit(SERVICE_STATUS['OK'])
+            print('{} produced {} secs ago'.format(BPA, secs_diff))
+            sys.exit(SERVICE_STATUS['OK'])
 
 if __name__ == "__main__":
     main(sys.argv)
