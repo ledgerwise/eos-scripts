@@ -72,10 +72,6 @@ def main(argv):
                        help='Port number. default = 8888')
     parser.add_argument('-s', '--ssl', action='store_true', default=False, help = 'Use ssl to connect to the api endpoint')
     parser.add_argument('-t', '--timeout', type=int, default=3, help = 'Timeout in seconds')
-    parser.add_argument('-cf', '--config-file', default='peers.ini',
-                       help='Config file to get the RPC endpoints (One host:port per line)')
-    parser.add_argument('-n', '--num-blocks-threshold', default=120,
-                       help='Threshold to consider that head is forked or not working')
     parser.add_argument('-c', '--check', help='Check to perform [http,p2p,nodeos,lbp]')
     parser.add_argument('-lbp', '--lbp_file', default='eos.lbp.json',
                         help='json file with the lbp info. Produced by eoslpb.py')
@@ -86,8 +82,6 @@ def main(argv):
     HOST = args.host
     TIMEOUT = args.timeout
     PORT = args.port
-    CONFIG_FILE = args.config_file
-    NUM_BLOCKS_THRESHOLD = args.num_blocks_threshold
     CHECK = args.check
     VERBOSE = args.verbose
     LBP_FILE = args.lbp_file
@@ -119,6 +113,7 @@ def main(argv):
             sys.exit(SERVICE_STATUS['CRITICAL'])
 
         print('BP API OK {}'.format(performance_data))
+        print(response.elapsed.total_seconds())
         sys.exit(SERVICE_STATUS['OK'])
 
     elif CHECK == 'p2p':
@@ -167,6 +162,9 @@ def main(argv):
                 sys.exit(SERVICE_STATUS['CRITICAL'])
             print('{} produced {} secs ago'.format(BPA, secs_diff))
             sys.exit(SERVICE_STATUS['OK'])
-
+    else:
+        print('Unknown check')
+        parser.print_help()
+        sys.exit(SERVICE_STATUS['WARNING'])
 if __name__ == "__main__":
     main(sys.argv)
