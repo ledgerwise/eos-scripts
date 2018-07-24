@@ -11,6 +11,7 @@ import requests
 import threading
 import datetime
 import mpu.io
+import time
 
 SERVICE_STATUS = {
     'OK': 0,
@@ -27,29 +28,6 @@ def get_lbp(lbp_file):
         sys.exit(SERVICE_STATUS['CRITICAL'])
 
     return result
-
-def get_peers(config_file):
-    try:
-        with open(config_file) as f:
-            peers = f.readlines()
-    except Exception as e:
-        print('ERROR: {}'.format(str(e)))
-        sys.exit(SERVICE_STATUS['CRITICAL'])
-
-    return [peer.strip() for peer in peers]
-
-def get_heads(peers):
-    threads = [None] * len(peers)
-    results = [None] * len(peers)
-
-    for i, peer in enumerate(peers):
-        threads[i] = threading.Thread(target=get_info, args=(peer, results, i))
-        threads[i].start()
-
-    for i in range(len(peers)):
-        threads[i].join()
-
-    return [result['head_block_num'] for result in results]
 
 def get_info(host_port, results = None, i = None):
     try:
@@ -111,19 +89,21 @@ def main(argv):
             if VERBOSE:
                 print(e)
             sys.exit(SERVICE_STATUS['CRITICAL'])
+        performance_data = response.elapsed.total_seconds()
 
-        print('BP API OK {}'.format(performance_data))
-        print(response.elapsed.total_seconds())
+        print('BP API OK | time={}s'.format(performance_data))
         sys.exit(SERVICE_STATUS['OK'])
 
     elif CHECK == 'p2p':
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(TIMEOUT)
+        start = time.time()
         result = sock.connect_ex((HOST, PORT))
         if result != 0:
             print('P2P CRITICAL')
             sys.exit(SERVICE_STATUS['CRITICAL'])
-        print('BP P2P OK {}'.format(performance_data))
+        performance_data = time.time() - start
+        print('BP P2P OK | time={}s'.format(performance_data))
         sys.exit(SERVICE_STATUS['OK'])
 
     elif CHECK == 'nodeos':
@@ -138,8 +118,7 @@ def main(argv):
         if not process_found:
             print('nodeos CRITICAL: Process not running')
             sys.exit(SERVICE_STATUS['CRITICAL'])
-
-        print('BP nodeos running OK {}'.format(performance_data))
+        print('BP nodeos running OK')
         sys.exit(SERVICE_STATUS['OK'])
 
     elif CHECK == 'lbp':
