@@ -10,7 +10,7 @@ def get_info(endpoint):
     return requests.get('{}/v1/chain/get_info'.format(endpoint)).json()
 
 def make_request(endpoint, function, data):
-    return requests.post('{}/v1/chain/{}'.format(endpoint, function), data=json.dumps(data)).json()['rows']
+    return requests.post('{}/v1/chain/{}'.format(endpoint, function), timeout=2.0, data=json.dumps(data)).json()['rows']
 
 def get_producers(endpoint, limit = 1000):
     data = {
@@ -48,6 +48,8 @@ def main():
     while True:
         for endpoint in endpoints: 
             info = get_info(endpoint)
+            if not info:
+                continue
             if not info['head_block_producer'] in eoslbp:
                 eoslbp[info['head_block_producer']] = {}
             eoslbp[info['head_block_producer']]['last_block_produced_time'] = info['head_block_time']
@@ -55,7 +57,6 @@ def main():
             producers = get_producers(endpoint)
             sproducers = sorted(producers, key=lambda x: float(x['total_votes']), reverse=True)[:21]
             eoslbp['producers'] = [ sproducer['owner'] for sproducer in sproducers ]
-            print(eoslbp['producers'])
             mpu.io.write(json_file, eoslbp)
             time.sleep(1)
 
