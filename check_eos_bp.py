@@ -101,16 +101,15 @@ def main(argv):
     if CHECK == 'head':
         j_response, performance_data = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
         head_block_time = j_response['head_block_time']
+        head_block_num = int(j_response['head_block_num'])
+        last_irreversible_block_num = int(j_response['last_irreversible_block_num'])
         head_block_time_dt = datetime.datetime.strptime(head_block_time, "%Y-%m-%dT%H:%M:%S.%f")
+
         now = datetime.datetime.utcnow()
         secs_diff = int((now - head_block_time_dt).total_seconds())
         if secs_diff > 30:
-            print('BP seems to be syncing: Last block time: {}'.format(head_block_time))
+            print('BP seems to be syncing. Last block: {}. Last block time: {}'.format(head_block_num, head_block_time))
             sys.exit(SERVICE_STATUS['WARNING'])
-        
-        
-        head_block_num = int(j_response['head_block_num'])
-        last_irreversible_block_num = int(j_response['last_irreversible_block_num'])
         
         time.sleep(HEAD_INTERVAL)
 
