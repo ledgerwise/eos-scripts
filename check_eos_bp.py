@@ -100,16 +100,8 @@ def main(argv):
     
     if CHECK == 'head':
         j_response, performance_data = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
-        head_block_time = j_response['head_block_time']
         head_block_num = int(j_response['head_block_num'])
         last_irreversible_block_num = int(j_response['last_irreversible_block_num'])
-        head_block_time_dt = datetime.datetime.strptime(head_block_time, "%Y-%m-%dT%H:%M:%S.%f")
-
-        now = datetime.datetime.utcnow()
-        secs_diff = int((now - head_block_time_dt).total_seconds())
-        if secs_diff > 30:
-            print('BP seems to be syncing. Last block: {}. Last block time: {}'.format(head_block_num, head_block_time))
-            sys.exit(SERVICE_STATUS['WARNING'])
         
         time.sleep(HEAD_INTERVAL)
 
@@ -121,6 +113,15 @@ def main(argv):
         is_lib_advancing = last_irreversible_block_num2 > last_irreversible_block_num
         
         if is_hb_advancing and is_lib_advancing:
+            head_block_time = j_response2['head_block_time']
+            head_block_time_dt = datetime.datetime.strptime(head_block_time, "%Y-%m-%dT%H:%M:%S.%f")
+
+            now = datetime.datetime.utcnow()
+            secs_diff = int((now - head_block_time_dt).total_seconds())
+            if secs_diff > 30:
+                print('BP seems to be syncing. Last block: {}. Last block time: {}'.format(head_block_num, head_block_time))
+                sys.exit(SERVICE_STATUS['WARNING'])
+
             print('BP HEAD OK - LB: {}, LIB {} | time={}s'.format(head_block_num2, last_irreversible_block_num2, performance_data))
             sys.exit(SERVICE_STATUS['OK'])
         elif not is_hb_advancing:
