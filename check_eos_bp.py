@@ -124,10 +124,10 @@ def main(argv):
             print('BP HEAD OK - LB: {}, LIB {} | time={}s'.format(head_block_num2, last_irreversible_block_num2, performance_data))
             sys.exit(SERVICE_STATUS['OK'])
         elif not is_hb_advancing:
-            print('BP HEAD BLOCK not advancing')
+            print('BP HEAD BLOCK not advancing. Last block {}'.format(head_block_num2))
             sys.exit(SERVICE_STATUS['CRITICAL'])
         elif not is_lib_advancing:
-            print('BP LIB not advancing')
+            print('BP LIB not advancing. Last block {}'.format(last_irreversible_block_num2))
             sys.exit(SERVICE_STATUS['CRITICAL'])
 
     elif CHECK == 'p2p':
