@@ -106,7 +106,7 @@ def main(argv):
         secs_diff = int((now - head_block_time_dt).total_seconds())
         if secs_diff > 30:
             print('BP seems to be syncing: Last block time: {}'.format(head_block_time))
-            sys.exit(SERVICE_STATUS['CRITICAL'])
+            sys.exit(SERVICE_STATUS['WARNING'])
         
         
         head_block_num = int(j_response['head_block_num'])
