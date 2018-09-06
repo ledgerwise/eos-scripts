@@ -13,16 +13,7 @@ def make_request(endpoint, function, data):
     return requests.post('{}/v1/chain/{}'.format(endpoint, function), timeout=2.0, data=json.dumps(data)).json()['rows']
 
 def get_producers(endpoint, limit = 1000):
-    data = {
-      'scope': 'eosio',
-      'code': 'eosio',
-      'table': 'producers',
-      'json': True,
-      'lower_bound': 0,
-      'upper_bound': -1,
-      'limit': limit
-    }
-    return make_request(endpoint, 'get_table_rows', data)
+    return requests.get('{}/v1/chain/get_producer_schedule'.format(endpoint)).json()['active']['producers']
 
 def main():
     me = singleton.SingleInstance()
@@ -55,8 +46,7 @@ def main():
             eoslbp[info['head_block_producer']]['last_block_produced_time'] = info['head_block_time']
 
             producers = get_producers(endpoint)
-            sproducers = sorted(producers, key=lambda x: float(x['total_votes']), reverse=True)[:21]
-            eoslbp['producers'] = [ sproducer['owner'] for sproducer in sproducers ]
+            eoslbp['producers'] = [ p['producer_name'] for p in producers ]
             mpu.io.write(json_file, eoslbp)
             break
         time.sleep(1)
