@@ -50,8 +50,8 @@ def check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE):
     except requests.exceptions.HTTPError as e:
         print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(e.response.status_code))
         sys.exit(SERVICE_STATUS['CRITICAL'])
-    except requests.exceptions.Timeout:
-        print('HTTP CRITICAL: Failed to reach server. Reason: Timeout')
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        print('HTTP CRITICAL: Failed to reach server. Reason: Timeout or Connection Error')
         sys.exit(SERVICE_STATUS['CRITICAL'])
     except requests.exceptions.RequestException as e:
         print('HTTP CRITICAL: Failed to reach server. Reason: {}'.format(e))
