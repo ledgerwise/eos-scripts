@@ -38,14 +38,21 @@ def main():
 
     while True:
         for endpoint in endpoints: 
-            info = get_info(endpoint)
-            if not info:
+            try:
+                info = get_info(endpoint)
+            except:
+                print('Error getting info from endpoint {}'.format(endpoint))
                 continue
+                
             if not info['head_block_producer'] in eoslbp:
                 eoslbp[info['head_block_producer']] = {}
             eoslbp[info['head_block_producer']]['last_block_produced_time'] = info['head_block_time']
 
-            producers = get_producers(endpoint)
+            try:
+                producers = get_producers(endpoint)
+            except:
+                print('Error getting producers from endpoint {}'.format(endpoint))
+                continue
             eoslbp['producers'] = [ p['producer_name'] for p in producers ]
             mpu.io.write(json_file, eoslbp)
             break
