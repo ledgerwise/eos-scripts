@@ -43,10 +43,13 @@ def main():
             except:
                 print('Error getting info from endpoint {}'.format(endpoint))
                 continue
-                
-            if not info['head_block_producer'] in eoslbp:
-                eoslbp[info['head_block_producer']] = {}
-            eoslbp[info['head_block_producer']]['last_block_produced_time'] = info['head_block_time']
+            try:    
+                if not info['head_block_producer'] in eoslbp:
+                    eoslbp[info['head_block_producer']] = {}
+                eoslbp[info['head_block_producer']]['last_block_produced_time'] = info['head_block_time']
+            except:
+                print('Error getting head_block_producer from endpoint {}'.format(endpoint))
+                continue
 
             try:
                 producers = get_producers(endpoint)
