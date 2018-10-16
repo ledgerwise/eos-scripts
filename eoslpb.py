@@ -16,7 +16,7 @@ def get_producers(endpoint, limit = 1000):
     return requests.get('{}/v1/chain/get_producer_schedule'.format(endpoint)).json()['active']['producers']
 
 def main():
-    me = singleton.SingleInstance()
+    #me = singleton.SingleInstance()
 
     parser = optparse.OptionParser()
     parser.add_option("-e", '--endpoint-list', dest="endpoints", default="https://nodes.get-scatter.com",
