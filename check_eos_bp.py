@@ -173,7 +173,7 @@ def main(argv):
             last_block_produced_time_dt = datetime.datetime.strptime(last_block_produced_time, "%Y-%m-%dT%H:%M:%S.%f")
             now = datetime.datetime.utcnow()
             secs_diff = int((now - last_block_produced_time_dt).total_seconds())
-            if secs_diff > 126:
+            if secs_diff > 150:
                 print('LBP CRITICAL: {} last produced {} seconds ago. '.format(BPA, secs_diff))
                 sys.exit(SERVICE_STATUS['CRITICAL'])
             print('{} produced {} secs ago'.format(BPA, secs_diff))
