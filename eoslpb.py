@@ -59,7 +59,7 @@ def main():
             eoslpb['producers'] = [ p['producer_name'] for p in producers ]
             mpu.io.write(json_file, eoslpb)
             break
-        time.sleep(5)
+        time.sleep(3)
 
 if __name__ == "__main__":
     main()
