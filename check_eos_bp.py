@@ -20,9 +20,9 @@ SERVICE_STATUS = {
     'UNKNOWN': 3
 }
 
-def get_lbp(lbp_file):
+def get_lpb(lpb_file):
     try:
-        result = mpu.io.read(lbp_file)
+        result = mpu.io.read(lpb_file)
     except Exception as e:
         print('ERROR: {}'.format(str(e)))
         sys.exit(SERVICE_STATUS['CRITICAL'])
@@ -74,9 +74,9 @@ def main(argv):
     parser.add_argument('-s', '--ssl', action='store_true', default=False, help = 'Use ssl to connect to the api endpoint')
     parser.add_argument('-t', '--timeout', type=int, default=3, help = 'Timeout in seconds')
     parser.add_argument('-i', '--head_interval', type=int, default=10, help = 'Time in seconds to check head')
-    parser.add_argument('-c', '--check', help='Check to perform [http,p2p,nodeos,lbp]')
-    parser.add_argument('-lbp', '--lbp_file', default='eos.lbp.json',
-                        help='json file with the lbp info. Produced by eoslpb.py')
+    parser.add_argument('-c', '--check', help='Check to perform [http,p2p,nodeos,lpb]')
+    parser.add_argument('-lpb', '--lpb_file', default='eos.lpb.json',
+                        help='json file with the lpb info. Produced by eoslpb.py')
     parser.add_argument('-bpa', '--bp_account',
                         help='BP accounts to check last block produced')
     
@@ -87,7 +87,7 @@ def main(argv):
     PORT = args.port
     CHECK = args.check
     VERBOSE = args.verbose
-    LBP_FILE = args.lbp_file
+    LPB_FILE = args.lpb_file
     BPA = args.bp_account
     SSL = args.ssl
 
@@ -158,23 +158,23 @@ def main(argv):
         print('BP nodeos running OK')
         sys.exit(SERVICE_STATUS['OK'])
 
-    elif CHECK == 'lbp':
-        lbp = get_lbp(LBP_FILE)
+    elif CHECK == 'lpb':
+        lpb = get_lpb(LPB_FILE)
 
-        if not BPA in lbp['producers']:
+        if not BPA in lpb['producers']:
             print('{} is not in top 21'.format(BPA))
             sys.exit(SERVICE_STATUS['OK'])
         else:
             if not BPA:
-                print('LBP CRITICAL: No BP account specified')
+                print('LPB CRITICAL: No BP account specified')
                 sys.exit(SERVICE_STATUS['CRITICAL'])
 
-            last_block_produced_time = lbp[BPA]['last_block_produced_time']
+            last_block_produced_time = lpb[BPA]['last_block_produced_time']
             last_block_produced_time_dt = datetime.datetime.strptime(last_block_produced_time, "%Y-%m-%dT%H:%M:%S.%f")
             now = datetime.datetime.utcnow()
             secs_diff = int((now - last_block_produced_time_dt).total_seconds())
             if secs_diff > 150:
-                print('LBP CRITICAL: {} last produced {} seconds ago. '.format(BPA, secs_diff))
+                print('LPB CRITICAL: {} last produced {} seconds ago. '.format(BPA, secs_diff))
                 sys.exit(SERVICE_STATUS['CRITICAL'])
             print('{} produced {} secs ago'.format(BPA, secs_diff))
             sys.exit(SERVICE_STATUS['OK'])
