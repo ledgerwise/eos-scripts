@@ -1,0 +1,13 @@
+{
+    "endpoints": [{
+            "host": "myhost1.io",
+            "port": 80,
+            "weight": 80
+        },
+        {
+            "host": "myhost2.io",
+            "port": 80,
+            "weight": 100
+        }
+    ]
+}
