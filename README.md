@@ -1,3 +1,7 @@
+![EOSMetal](./logo-text-grey.jpg "EOSMetal")
+
+[https://eosmetal.io](https://eosmetal.io)
+
 # eos-scripts
 Collection of EOS Scripts
 
