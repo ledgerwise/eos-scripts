@@ -74,7 +74,7 @@ def main(argv):
     parser.add_argument('-s', '--ssl', action='store_true', default=False, help = 'Use ssl to connect to the api endpoint')
     parser.add_argument('-t', '--timeout', type=int, default=3, help = 'Timeout in seconds')
     parser.add_argument('-i', '--head_interval', type=int, default=10, help = 'Time in seconds to check head')
-    parser.add_argument('-c', '--check', help='Check to perform [http,p2p,nodeos,lpb]')
+    parser.add_argument('-c', '--check', help='Check to perform [http,head,p2p,nodeos,lpb]')
     parser.add_argument('-lpb', '--lpb_file', default='eos.lpb.json',
                         help='json file with the lpb info. Produced by eoslpb.py')
     parser.add_argument('-bpa', '--bp_account',

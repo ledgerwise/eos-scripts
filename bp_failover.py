@@ -54,20 +54,36 @@ def exec_command(command):
     p_status = p.wait()
     return (p_status, output)
 
+def getProducerEndpoint(endpoint):
+    result = 'https' if endpoint['https'] else 'http'
+    result = '{}://{}:{}/v1/producer/'.format(result, endpoint['host'], endpoint['port'])
+    return result
 
 def enable_endpoint(endpoint):
-    return True
-
+    try:
+        response = requests.post('{}resume'.format(getProducerEndpoint(endpoint)))
+    except:
+        return False
+    if response.json()['result'] == 'ok':
+      return True
+    else: 
+      return False
 
 def disable_endpoint(endpoint):
-    return True
-
+    try:
+        response = requests.post('{}pause'.format(getProducerEndpoint(endpoint)))
+    except:
+        return False
+    if response.json()['result'] == 'ok':
+      return True
+    else: 
+      return False
 
 def main():
     try:
         config = mpu.io.read(CONFIG_FILE)
     except Exception as e:
-        print('Error opening file: {}'.format(e))
+        logger.critical('Error opening file: {}'.format(e))
         quit()
 
     endpoints = config['endpoints']
@@ -78,34 +94,37 @@ def main():
         command = [CHECK_COMMAND,
                    '-H', endpoint['host'],
                    '-p', str(endpoint['port']),
-                   '-c', 'http'
+                   '-c', 'head',
+                   '-i', '6'
                    ]
         p_state, output = exec_command(command)
         if p_state == 0:
+            logger.info('{}:{} is working fine: {}'.format(endpoint['host'], endpoint['port'], output))
             working_endpoints.append(endpoint)
         else:
+            logger.critical('{}:{} is not responding: {}'.format(endpoint['host'], endpoint['port'], output))
             failing_endpoints.append(endpoint)
 
     if len(working_endpoints) == 0:
-        print('No active enpoints found!!!!')
+        logger.critical('No active enpoints found!!!!')
         quit()
 
     working_endpoints = sorted(
         working_endpoints, key=lambda k: k['weight'], reverse=True)
     for endpoint in working_endpoints:
         if enable_endpoint(endpoint):
-            print('Active endpoint: {}. weight: {}'.format(
-                endpoint['url'], endpoint['weight']))
+            logger.info('Active endpoint: {}. weight: {}'.format(
+                endpoint['host'], endpoint['weight']))
             working_endpoints.remove(endpoint)
             break
 
     for endpoint in working_endpoints + failing_endpoints:
         if disable_endpoint(endpoint):
-            print('Disabled endpoint: {}. weight: {}'.format(
-                endpoint['url'], endpoint['weight']))
+            logger.info('Disabled endpoint: {}. weight: {}'.format(
+                endpoint['host'], endpoint['weight']))
         else:
-            print('Error disabling endpoint: {}. weight: {}'.format(
-                endpoint['url'], endpoint['weight']))
+            logger.info('Error disabling endpoint: {}. weight: {}'.format(
+                endpoint['host'], endpoint['weight']))
 
 
 if __name__ == "__main__":
