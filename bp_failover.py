@@ -113,8 +113,8 @@ def main():
         working_endpoints, key=lambda k: k['weight'], reverse=True)
     for endpoint in working_endpoints:
         if enable_endpoint(endpoint):
-            logger.info('Active endpoint: {}. weight: {}'.format(
-                endpoint['host'], endpoint['weight']))
+            logger.info('Active endpoint: {} ({} in {}). weight: {}'.format(
+                endpoint['host'], endpoint['desc'], endpoint['network'], endpoint['weight']))
             working_endpoints.remove(endpoint)
             break
 
