@@ -99,10 +99,10 @@ def main():
                    ]
         p_state, output = exec_command(command)
         if p_state == 0:
-            logger.info('{}:{} is working fine: {}'.format(endpoint['host'], endpoint['port'], output))
+            logger.info('{}:{} ({} in {}) is working fine: {}'.format(endpoint['host'], endpoint['port'], endpoint['desc'], endpoint['network'], output))
             working_endpoints.append(endpoint)
         else:
-            logger.critical('{}:{} is not responding: {}'.format(endpoint['host'], endpoint['port'], output))
+            logger.critical('{}:{} ({} in {}) is not responding: {}'.format(endpoint['host'], endpoint['port'], endpoint['desc'], endpoint['network'], output))
             failing_endpoints.append(endpoint)
 
     if len(working_endpoints) == 0:
@@ -120,11 +120,11 @@ def main():
 
     for endpoint in working_endpoints + failing_endpoints:
         if disable_endpoint(endpoint):
-            logger.info('Disabled endpoint: {}. weight: {}'.format(
-                endpoint['host'], endpoint['weight']))
+            logger.info('Disabled endpoint: {} ({} in {}). weight: {}'.format(
+                endpoint['host'], endpoint['desc'], endpoint['network'], endpoint['weight']))
         else:
-            logger.info('Error disabling endpoint: {}. weight: {}'.format(
-                endpoint['host'], endpoint['weight']))
+            logger.info('Error disabling endpoint: {} ({} in {}). weight: {}'.format(
+                endpoint['host'], endpoint['desc'], endpoint['network'], endpoint['weight']))
 
 
 if __name__ == "__main__":

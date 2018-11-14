@@ -1,11 +1,15 @@
 {
     "endpoints": [{
-            "host": "myhost1.io",
+            "desc": "myhost1.io",
+            "network": "EOS",
+            "host": "192.168.1.0",
             "port": 80,
             "weight": 80
         },
         {
-            "host": "myhost2.io",
+            "desc": "myhost2.io",
+            "network": "EOS",
+            "host": "192.168.1.0",
             "port": 80,
             "weight": 100
         }
