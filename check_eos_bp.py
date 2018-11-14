@@ -74,7 +74,7 @@ def main(argv):
     parser.add_argument('-s', '--ssl', action='store_true', default=False, help = 'Use ssl to connect to the api endpoint')
     parser.add_argument('-t', '--timeout', type=int, default=3, help = 'Timeout in seconds')
     parser.add_argument('-i', '--head_interval', type=int, default=10, help = 'Time in seconds to check head')
-    parser.add_argument('-c', '--check', help='Check to perform [http,head,p2p,nodeos,lpb]')
+    parser.add_argument('-c', '--check', help='Check to perform [http,head,lib,p2p,nodeos,lpb]')
     parser.add_argument('-lpb', '--lpb_file', default='eos.lpb.json',
                         help='json file with the lpb info. Produced by eoslpb.py')
     parser.add_argument('-bpa', '--bp_account',
@@ -101,18 +101,15 @@ def main(argv):
     if CHECK == 'head':
         j_response, performance_data = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
         head_block_num = int(j_response['head_block_num'])
-        last_irreversible_block_num = int(j_response['last_irreversible_block_num'])
         
         time.sleep(HEAD_INTERVAL)
 
         j_response2, performance_data2 = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
         head_block_num2 = int(j_response2['head_block_num'])
-        last_irreversible_block_num2 = int(j_response2['last_irreversible_block_num'])
 
         is_hb_advancing = head_block_num2 > head_block_num
-        is_lib_advancing = last_irreversible_block_num2 > last_irreversible_block_num
         
-        if is_hb_advancing and is_lib_advancing:
+        if is_hb_advancing:
             head_block_time = j_response2['head_block_time']
             head_block_time_dt = datetime.datetime.strptime(head_block_time, "%Y-%m-%dT%H:%M:%S.%f")
 
@@ -122,13 +119,31 @@ def main(argv):
                 print('BP seems to be syncing. Last block: {}. Last block time: {}'.format(head_block_num, head_block_time))
                 sys.exit(SERVICE_STATUS['WARNING'])
 
-            print('BP HEAD OK - LB: {}, LIB {} | time={}s'.format(head_block_num2, last_irreversible_block_num2, performance_data))
+            print('BP HEAD OK - LB: {} | time={}s'.format(head_block_num2, performance_data))
             sys.exit(SERVICE_STATUS['OK'])
-        elif not is_hb_advancing:
+        else:
             print('BP HEAD BLOCK not advancing. Last block {}'.format(head_block_num2))
             sys.exit(SERVICE_STATUS['CRITICAL'])
-        elif not is_lib_advancing:
-            print('BP LIB not advancing. Last block {}'.format(last_irreversible_block_num2))
+
+    if CHECK == 'lib':
+        j_response, performance_data = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
+        last_irreversible_block_num = int(j_response['last_irreversible_block_num'])
+        
+        time.sleep(HEAD_INTERVAL)
+
+        j_response2, performance_data2 = check_api(HOST, PORT, SSL, TIMEOUT, VERBOSE)
+        last_irreversible_block_num2 = int(j_response2['last_irreversible_block_num'])
+
+        is_lib_advancing = last_irreversible_block_num2 > last_irreversible_block_num
+        
+        if is_lib_advancing:
+            head_block_time = j_response2['head_block_time']
+            head_block_time_dt = datetime.datetime.strptime(head_block_time, "%Y-%m-%dT%H:%M:%S.%f")
+
+            print('BP LIB OK - LIB {} | time={}s'.format(last_irreversible_block_num2, performance_data))
+            sys.exit(SERVICE_STATUS['OK'])
+        else:
+            print('BP LIB not advancing. Last block {}'.format(head_block_num2))
             sys.exit(SERVICE_STATUS['CRITICAL'])
 
     elif CHECK == 'p2p':
