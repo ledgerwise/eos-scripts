@@ -123,7 +123,7 @@ def main():
             logger.info('Disabled endpoint: {} ({} in {}). weight: {}'.format(
                 endpoint['host'], endpoint['desc'], endpoint['network'], endpoint['weight']))
         else:
-            logger.info('Error disabling endpoint: {} ({} in {}). weight: {}'.format(
+            logger.critical('Error disabling endpoint: {} ({} in {}). weight: {}'.format(
                 endpoint['host'], endpoint['desc'], endpoint['network'], endpoint['weight']))
 
 
