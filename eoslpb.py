@@ -7,13 +7,13 @@ import json
 from tendo import singleton
 
 def get_info(endpoint):
-    return requests.get('{}/v1/chain/get_info'.format(endpoint)).json()
+    return requests.get('{}/v1/chain/get_info'.format(endpoint), timeout=2.0).json()
 
 def make_request(endpoint, function, data):
     return requests.post('{}/v1/chain/{}'.format(endpoint, function), timeout=2.0, data=json.dumps(data)).json()['rows']
 
 def get_producers(endpoint, limit = 1000):
-    return requests.get('{}/v1/chain/get_producer_schedule'.format(endpoint)).json()['active']['producers']
+    return requests.get('{}/v1/chain/get_producer_schedule'.format(endpoint), timeout=2.0).json()['active']['producers']
 
 def main():
     #me = singleton.SingleInstance()

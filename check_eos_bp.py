@@ -143,7 +143,7 @@ def main(argv):
             print('BP LIB OK - LIB {} | time={}s'.format(last_irreversible_block_num2, performance_data))
             sys.exit(SERVICE_STATUS['OK'])
         else:
-            print('BP LIB not advancing. Last block {}'.format(head_block_num2))
+            print('BP LIB not moving')
             sys.exit(SERVICE_STATUS['CRITICAL'])
 
     elif CHECK == 'p2p':
