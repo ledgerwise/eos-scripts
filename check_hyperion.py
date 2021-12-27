@@ -3,6 +3,8 @@
 import sys
 import argparse
 import requests
+import dateutil.parser as dp
+import time
 
 SERVICE_STATUS = {
     'OK': 0,
@@ -35,6 +37,28 @@ def get_health(HOST, PORT, SSL, TIMEOUT, VERBOSE):
     performance_data = response.elapsed.total_seconds()
     return j_response, performance_data
 
+def get_last_action_timestamp(HOST, PORT, SSL, TIMEOUT, VERBOSE):
+    try:
+        response = requests.get('{}://{}:{}/v2/history/get_actions?limit=1'.format('http' if not SSL else 'https', HOST, PORT), timeout=TIMEOUT)
+        if response.status_code != 200:
+            print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(response.status_code))
+            sys.exit(SERVICE_STATUS['CRITICAL'])
+        j_response = response.json()
+    except requests.exceptions.HTTPError as e:
+        print('HTTP CRITICAL: The server couldn\'t fulfill the request. Error code: {}'.format(e.response.status_code))
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        print('HTTP CRITICAL: Failed to reach server. Reason: Timeout or Connection Error')
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+    except requests.exceptions.RequestException as e:
+        print('HTTP CRITICAL: Failed to reach server. Reason: {}'.format(e))
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+    except Exception as e:
+        print('HTTP CRITICAL: Failed to reach server. Reason: Unknown')
+        if VERBOSE:
+            print(e)
+        sys.exit(SERVICE_STATUS['CRITICAL'])
+    return time.mktime(dp.parse(j_response['actions'][0]['timestamp']).timetuple())
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Check BP status')
@@ -89,6 +113,14 @@ def main(argv):
     if last_indexed_block != total_indexed_blocks:
         output_message += "Missing some indexed blocks. "
         output_status = SERVICE_STATUS['CRITICAL']
+    
+    # Check last action timestamp
+    if time.time() - last_action_timestamp > 300:
+        output_message += "Last action older than 5m."
+        output_status = SERVICE_STATUS['CRITICAL']
+    elif time.time() - last_action_timestamp > 60:
+        output_message += "Last action older than 1m."
+        output_status = SERVICE_STATUS['WARNING']
 
     if not output_message: 
         output_message = 'Everything Ok'
