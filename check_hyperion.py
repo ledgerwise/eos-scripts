@@ -86,6 +86,7 @@ def main(argv):
     output_message = ''
     output_status = SERVICE_STATUS['OK']
     response, http_query_time = get_health(HOST, PORT, SSL, TIMEOUT, VERBOSE)
+    last_action_timestamp = get_last_action_timestamp(HOST, PORT, SSL, TIMEOUT, VERBOSE)
     query_time = response['query_time_ms']
     
     services = response['health']
