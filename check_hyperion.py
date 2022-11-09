@@ -93,8 +93,12 @@ def main(argv):
     elastic_service = list(filter(lambda service: service['service'] == 'Elasticsearch', services))[0]
     nodeos_service = list(filter(lambda service: service['service'] == 'NodeosRPC', services))[0]
     head_block = nodeos_service['service_data']['head_block_num']
-    last_indexed_block = elastic_service['service_data']['last_indexed_block']
-    total_indexed_blocks = elastic_service['service_data']['total_indexed_blocks']
+    try:
+        missing_blocks = elastic_service['service_data']['missing_blocks']
+    except:
+        last_indexed_block = elastic_service['service_data']['last_indexed_block']
+        total_indexed_blocks = elastic_service['service_data']['total_indexed_blocks']
+        missing_blocks = abs(last_indexed_block - total_indexed_blocks)
     
     #Check last indexed block vs head_block
     index_gap = abs(head_block - last_indexed_block)
@@ -111,7 +115,7 @@ def main(argv):
         output_status = SERVICE_STATUS['CRITICAL']
 
     # Compare blocks indexed to total blocks
-    if last_indexed_block != total_indexed_blocks:
+    if missing_blocks > 0:
         output_message += "Missing some indexed blocks. "
         output_status = SERVICE_STATUS['CRITICAL']
     
