@@ -93,11 +93,11 @@ def main(argv):
     elastic_service = list(filter(lambda service: service['service'] == 'Elasticsearch', services))[0]
     nodeos_service = list(filter(lambda service: service['service'] == 'NodeosRPC', services))[0]
     head_block = nodeos_service['service_data']['head_block_num']
+    last_indexed_block = elastic_service['service_data']['last_indexed_block']
+    total_indexed_blocks = elastic_service['service_data']['total_indexed_blocks']
     try:
         missing_blocks = elastic_service['service_data']['missing_blocks']
     except:
-        last_indexed_block = elastic_service['service_data']['last_indexed_block']
-        total_indexed_blocks = elastic_service['service_data']['total_indexed_blocks']
         missing_blocks = abs(last_indexed_block - total_indexed_blocks)
     
     #Check last indexed block vs head_block
