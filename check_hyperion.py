@@ -105,6 +105,15 @@ def main(argv):
         missing_blocks = elastic_service['service_data']['missing_blocks']
     except:
         missing_blocks = abs(last_indexed_block - total_indexed_blocks)
+
+    # Check last action timestamp
+    last_action_lag = time.time() - last_action_timestamp
+    if last_action_lag > C_LAST_ACTION_THRESHOLD:
+        output_message += f"Last action older than {C_LAST_ACTION_THRESHOLD}s."
+        output_status = SERVICE_STATUS['CRITICAL']
+    elif last_action_lag > W_LAST_ACTION_THRESHOLD:
+        output_message += f"Last action older than {W_LAST_ACTION_THRESHOLD}s."
+        output_status = SERVICE_STATUS['WARNING']
     
     #Check last indexed block vs head_block
     index_gap = abs(head_block - last_indexed_block)
@@ -125,17 +134,10 @@ def main(argv):
         output_message += "Missing some indexed blocks. "
         output_status = SERVICE_STATUS['CRITICAL']
     
-    # Check last action timestamp
-    if time.time() - last_action_timestamp > C_LAST_ACTION_THRESHOLD:
-        output_message += f"Last action older than {C_LAST_ACTION_THRESHOLD}s."
-        output_status = SERVICE_STATUS['CRITICAL']
-    elif time.time() - last_action_timestamp > W_LAST_ACTION_THRESHOLD:
-        output_message += f"Last action older than {W_LAST_ACTION_THRESHOLD}s."
-        output_status = SERVICE_STATUS['WARNING']
 
     if not output_message: 
         output_message = 'Everything Ok'
-    print('{} | http_query_time={}s, query_time={}ms'.format(output_message.rstrip(), http_query_time, query_time))
+    print(f"{output_message.rstrip()} | 'http_query_time'={http_query_time:,.2f}s; 'query_time'={query_time:,.2f}ms; 'last_action_lag'={last_action_lag:,.2f}s")
     sys.exit(output_status)
 
 if __name__ == "__main__":
