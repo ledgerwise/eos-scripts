@@ -104,5 +104,5 @@ ENV/
 peers.ini
 eos-scripts.code-workspace
 *.lbp.json
-failover_config.json
+*failover_config.json
 .vscode

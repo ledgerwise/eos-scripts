@@ -73,6 +73,10 @@ def main(argv):
                         help='warning threshold of head block - last indexed block. default 10')
     parser.add_argument('-c', '--critical', type=int, default='100',
                         help='critical threshold of head block - last indexed block. default 100')
+    parser.add_argument('-law', '--lastactionwarning', type=int, default='120',
+                        help='warning threshold of last indexed action. default 120')
+    parser.add_argument('-lacc', '--lastactioncritical', type=int, default='300',
+                        help='critical threshold of last indexed action. default 300')
     
     args = parser.parse_args()
     HOST = args.host
@@ -82,6 +86,8 @@ def main(argv):
     VERBOSE = args.verbose
     W_THRESHOLD = args.critical
     C_THRESHOLD = args.warning
+    W_LAST_ACTION_THRESHOLD = args.lastactioncritical
+    C_LAST_ACTION_THRESHOLD = args.lastactionwarning
 
     output_message = ''
     output_status = SERVICE_STATUS['OK']
@@ -120,11 +126,11 @@ def main(argv):
         output_status = SERVICE_STATUS['CRITICAL']
     
     # Check last action timestamp
-    if time.time() - last_action_timestamp > 300:
-        output_message += "Last action older than 5m."
+    if time.time() - last_action_timestamp > C_LAST_ACTION_THRESHOLD:
+        output_message += f"Last action older than {C_LAST_ACTION_THRESHOLD}s."
         output_status = SERVICE_STATUS['CRITICAL']
-    elif time.time() - last_action_timestamp > 60:
-        output_message += "Last action older than 1m."
+    elif time.time() - last_action_timestamp > W_LAST_ACTION_THRESHOLD:
+        output_message += f"Last action older than {W_LAST_ACTION_THRESHOLD}s."
         output_status = SERVICE_STATUS['WARNING']
 
     if not output_message: 
