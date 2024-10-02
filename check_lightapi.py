@@ -33,7 +33,7 @@ def get_health(HOST, PORT, SSL, TIMEOUT, VERBOSE):
             print(e)
         sys.exit(SERVICE_STATUS['CRITICAL'])
     performance_data = response.elapsed.total_seconds()
-    return j_response, performance_data
+    return j_response.strip(), performance_data
 
 
 def main(argv):
