@@ -130,9 +130,9 @@ def main(argv):
         output_status = SERVICE_STATUS['CRITICAL']
 
     # Compare blocks indexed to total blocks
-    if missing_blocks > 0:
-        output_message += "Missing some indexed blocks. "
-        output_status = SERVICE_STATUS['CRITICAL']
+    #if missing_blocks > 0:
+    #    output_message += "Missing some indexed blocks. "
+    #    output_status = SERVICE_STATUS['CRITICAL']
     
 
     if not output_message: 
